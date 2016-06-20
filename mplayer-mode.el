@@ -157,6 +157,12 @@
   :type 'file
   :group 'mplayer)
 
+(defcustom mplayer-command-line-arguments
+  '("-quiet" "-idle" "-slave" "-pausing" "2")
+  "Command line arguments for the mplayer executable."
+  :type '(repeat :inline string)
+  :group 'mplayer)
+
 (defvar mplayer-mode-map nil
   "Local keymap for mplayer-mode")
 
@@ -259,10 +265,9 @@ documentation for `mplayer-mode' for available bindings."
   (set (make-local-variable 'mplayer--osd-enabled) nil)
   (set (make-local-variable 'mplayer-process-buffer) (generate-new-buffer "*mplayer*"))
   (set (make-local-variable 'mplayer-process)
-       (start-process "mplayer" mplayer-process-buffer
-                      mplayer-executable
-                      "-quiet" "-slave"
-                      filename))
+       (apply #'start-process "mplayer" mplayer-process-buffer
+              mplayer-executable
+              (append mplayer-command-line-arguments (list filename))))
   (mplayer-mode t))
 
 (defun mplayer-find-file-at-point ()
@@ -433,6 +438,7 @@ into the buffer."
   (define-key map (kbd "SPC")     'mplayer-toggle-pause)
   (define-key map (kbd "<right>") 'mplayer-seek-forward)
   (define-key map (kbd "<left>")  'mplayer-seek-backward)
+  (define-key map (kbd "b")       'mplayer-seek-backward)
   (define-key map (kbd "f")       'mplayer-faster)
   (define-key map (kbd "s")       'mplayer-slower)
   (define-key map (kbd "r")       'mplayer-reset-speed)
