@@ -252,11 +252,20 @@ this is called."
   :type 'string
   :group 'mplayer)
 
+(defcustom mplayer-position-stamp-format-regexp "([0-9]+\\.[0-9])"
+  "Regexp used to look for a position stamp."
+  :type 'regexp
+  :group 'mplayer)
+
 (defcustom mplayer-timestamp-format "[%H:%M:%S.%1N] "
   "Format used for inserting timestamps."
   :type 'string
   :group 'mplayer)
 
+(defcustom mplayer-timestamp-format-regexp "\\[[0-9:.]+\\] "
+  "Regexp used to look for timestamps."
+  :type 'regexp
+  :group 'mplayer)
 
 ;;; Utilities:
 
@@ -473,6 +482,64 @@ into the buffer."
     (message "Seeking to position: %.1f" pos)
     (mplayer--send (format "seek %.1f 2" pos))))
 
+(defun mplayer-seek-to-last-inserted-position ()
+  "Search backwards from point to find last inserted position,
+  then cause mplayer to seek to that position."
+  (interactive)
+  (save-excursion
+    (let ((found (search-backward-regexp mplayer-position-stamp-format-regexp nil t)))
+      (when found
+        (forward-char)
+        (mplayer-seek-position-at-point)))))
+
+(defun mplayer-incr-or-decr-last-inserted-position-and-maybe-timestamp (flag)
+  "Increment or decrement (with optional arg `flag' t) last
+  inserted position (and optionally immediately following
+  timestamp), then seek to that position. This is used to get the
+  start of an utterance right while writing transcripts. This
+  presumes that there may be a timestamp immediately following
+  the position, and that such a timestamp should be updated to
+  reflect the new position offset."
+  (save-excursion
+    (let* ((incr (if flag -1.0 1.0))
+           (found (save-excursion
+                    (search-backward-regexp
+                     (concat mplayer-position-stamp-format-regexp
+                             "\\(?:" mplayer-timestamp-format-regexp "\\)?")
+                     nil t)))
+           (found-beg (and found (match-beginning 0)))
+           (found-end (and found (match-end 0)))
+           (found-pos-and-ts (and found
+                                  (equal found
+                                         (save-excursion
+                                           (search-backward-regexp
+                                            (concat
+                                             mplayer-position-stamp-format-regexp
+                                             mplayer-timestamp-format-regexp)
+                                            nil t)))))
+           (time (and found (save-excursion
+                              (goto-char found-beg)
+                              (forward-char)
+                              (thing-at-point 'mplayer-pos))))
+           (new-time (and time (/ (+ (truncate (* time 10.0))
+                                     incr)
+                                  10.0))))
+      (when found
+        (goto-char found-beg)
+        (delete-region found-beg found-end)
+        (insert (format mplayer-position-stamp-format new-time))
+        (when found-pos-and-ts
+          (insert (mplayer--format-time new-time)))))))
+
+(defun mplayer-incr-last-inserted-position-and-maybe-timestamp ()
+  (interactive)
+  (mplayer-incr-or-decr-last-inserted-position-and-maybe-timestamp nil))
+
+(defun mplayer-decr-last-inserted-position-and-maybe-timestamp ()
+  (interactive)
+  (mplayer-incr-or-decr-last-inserted-position-and-maybe-timestamp t))
+
+
 (defun mplayer-quit-mplayer ()
   "Quit mplayer and exit this mode."
   (interactive)
@@ -500,6 +567,9 @@ into the buffer."
   (define-key map (kbd "r")       'mplayer-reset-speed)
   (define-key map (kbd "p")       'mplayer-seek-position)
   (define-key map (kbd "g")       'mplayer-seek-position-at-point)
+  (define-key map (kbd "l")       'mplayer-seek-to-last-inserted-position)
+  (define-key map (kbd "<up>")    'mplayer-incr-last-inserted-position-and-maybe-timestamp)
+  (define-key map (kbd "<down>")  'mplayer-decr-last-inserted-position-and-maybe-timestamp)
   (define-key map (kbd "t")       'mplayer-insert-position)
   (define-key map (kbd "d")       'mplayer-toggle-osd)
   (define-key map (kbd "i")       'mplayer-insert-timestamp)
@@ -512,6 +582,12 @@ into the buffer."
 ;;; want that only when this mode is loaded, so why not? What are the
 ;;; odds of it clashing with another keybinding really?
 (define-key text-mode-map (kbd "C-x SPC C-x C-f") 'mplayer-find-file-at-point)
+
+;;; I also bind F11 to 'mplayer-seek-to-last-inserted-position in my
+;;; .emacs configuration. That's not done here for obvious
+;;; reasons... I don't want to stomp on anyone elses personal key
+;;; bindings.
+
 
 (define-minor-mode mplayer-mode
   "Control mplayer from within Emacs.  Mainly intended for
