@@ -101,8 +101,64 @@
 ;; so there's not a deterministic arithmatic to compute an exact time
 ;; offset within the file. That's why flac have seek point indexes in
 ;; them!
-
-
+;;;;;
+;;
+;; Todo:
+;;
+;;   * While doing all of this, keep in mind that the input might be
+;;     coming from Plover or ibus-plover. I am fairly sure that, at
+;;     least in theory, it can be programmed to emit the Emacs command
+;;     key sequences that activate these. (The problem with
+;;     out-of-order key sequences may need to be addressed?)
+;;
+;;   * Implement the F11 functionality as a lisp function rather than
+;;     as a keyboard macro. To do this, alongside the customization
+;;     for the timestamp format (inside parentheses by default) define
+;;     a regexp for searching backwards to it, also customizeable.
+;;
+;;     * This will have the added benefit that the C-x Space i can
+;;       look back for an immediately preceding C-x Space t entered,
+;;       so that they match as they do when C-x Space h is used,
+;;       without needing to do C-x Space Space, F11, C-x Space i
+;;       manually to fix it up. This happens when I use C-x Space h
+;;       and the push F11 to make sure I hit it right, but find that
+;;       it is a moment too late, and have to fix the
+;;       timestamp.
+;;
+;;     * Perhaps there ought to be a keybinding to a function that
+;;       moves the C-x Space h or C-x Space t or C-x Space i
+;;       timestamps backward by a tenth of a second at a time so
+;;       repeatedly pressing it can quickly set the start of the
+;;       utterance?
+;;
+;;   * See if it's possible to make it so it can not run off the end
+;;     of the recording, causing mplayer to stop, or perhaps make the
+;;     F11 function restart mplayer in that case prior to jumping to
+;;     the last timestamp location so that when near the end of the
+;;     recording it keeps working as expected.
+;;
+;;   * See if it's possible to have it insert a timestamp at regular
+;;     intervals during transcription to facilitate creation of a
+;;     parser that turns a transcript file into a subrip file, or an
+;;     HTML5 page + JavaScript + subtitles etc. for presentation of
+;;     transcripts during trial, or even for making transcripts for
+;;     subtitling movies.
+;;
+;;   * Define a suggested regular format for this kind of transcript
+;;     file so that a parser can work with it to post-process the
+;;     transcript into pandoc markdown, LaTeX, or HTML5, etc. for
+;;     presentation as court exhibits. Perhaps pandoc markdown really
+;;     is the easiest thing, and it can be written as such to begin
+;;     with? But what about the way I'm formatting the timestamps?
+;;     Won't that make it think those are links? Needs research and
+;;     development.
+;;
+;;   * For subtitling movies, consider adding settings for keeping the
+;;     mplayer window a certain size and location on the screen, on
+;;     top, etc. Or, is that Compiz' job?
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;; This is free software; you can redistribute it and/or modify
